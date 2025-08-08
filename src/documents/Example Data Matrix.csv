@@ -1,0 +1,42 @@
+Ticket type,Main Category,Category,Sub Category,PAT ID,Serial No.,Title (Example in CM21),Ticket Description,Troubleshooting Description,Service Provider,SLA
+Incident,Hardware,CPU,,,,PCD - Unable to turn on CPU,"General guideline for ticket description if generate by AI:
+1. User information
+2. Incident context
+3. Troubleshooting attempted by user
+4. Observation summary - e.g pattern of the issue if similar report come from same facility","Step 1:Ensure the power cable is securely plugged into both the wall outlet and the back of your PC's power supply unit (PSU)
+Step 2:Plug another device (like a lamp or phone charger) into the same wall outlet to confirm it's working. If not, try a different outlet
+Step 3:Ensure to tighten VGA cable back of the PC
+Step 4:Unplug any USB devices from your PC. Sometimes a faulty peripheral can prevent the PC from booting.",,2
+Incident,Hardware,CPU,,,,PCD - Unable to print,,"Step 1:Turn off your printer, unplug it from the power outlet, wait 30 seconds, plug it back in, and turn it on
+Step 2:Restart your computer. This simple step can often clear temporary glitches
+Step 3: If PC connect with USB Printers: Ensure the USB cable is securely connected to both the printer and your computer. Try a different USB port on your computer, or even a different USB cable, to rule out a faulty port or cable;or
+if PC connect with Network Printers (Ethernet): Verify the Ethernet cable is properly connected to the printer and your network router/switch. Check the link lights on the network port",,2
+Incident,Hardware,CPU,,,,PCD - Hang and processing,,"Step 1: Observe the BSOD screen if shown. If windows hang without showing BSOD, please wait 30-60 seconds. Sometimes, Windows can appear to hang because it's genuinely busy with a background task
+Step 2: Allow the system to restart. Windows will usually attempt to restart automatically after a BSOD 
+Step 3: Perform a hard reboot: Press and hold the power button for 5-10 seconds until the PC shuts off, then wait 10-15 seconds before turning it back on
+",,2
+Incident,Hardware,CPU,,,,PCD - Unable to boot window,,"Step 1: Unplug any USB devices from your PC. Sometimes a faulty peripheral can prevent the PC from booting.
+Step 2: Ensure the monitor's power cable is plugged in and the video cable (HDMI, DisplayPort, DVI, VGA) is securely connected to both the monitor and the PC
+Step 3: Ensure the power cable is securely plugged into the wall outlet and the back of the PC's Power Supply Unit (PSU)
+Step 4: Try to turn on the PC",,2
+Incident,Hardware,CPU,,,,PCD - No internet access,,"Step 1: Restart the desktop PC that can't connect. A simple reboot can often clear temporary software glitches or IP address conflicts
+Step 2: Ensure the Ethernet cable is securely plugged into both ends, ethernet port on the back of the PC and LAN port on the router or network switch.
+Step 3: If possible, try a different, known working Ethernet cable and If your router has multiple LAN ports, try plugging the cable into a different port on the router/switch
+Step 4: Restart after performing (Step 2) & (Step 3)",,2
+Incident,Hardware,CPU,,,,PCD - Monitor no display,,"Step 1: Ensure the monitor's power cable is securely plugged into the monitor and a working wall outlet or power strip. Check the monitor's power light again
+Step 2: Turn off the monitor, unplug its power cable from the wall for 30 seconds, then plug it back in and turn it on
+Step 3: Perform a full restart of the PC. If you can't see anything, you'll need to do a hard reboot: Press and hold the PC's power button for 5-10 seconds until it shuts off completely. Wait 10-15 seconds, then press the power button again to turn it back on",,2
+Incident,Hardware,Printer,,,,THP - Unable to print,,"Step 1:Turn off your printer, unplug it from the power outlet, wait 30 seconds, plug it back in, and turn it on
+Step 2:Restart your computer. This simple step can often clear temporary glitches
+Step 3: If PC connect with USB Printers: Ensure the USB cable is securely connected to both the printer and your computer. Try a different USB port on your computer, or even a different USB cable, to rule out a faulty port or cable;or
+if PC connect with Network Printers (Ethernet): Verify the Ethernet cable is properly connected to the printer and your network router/switch. Check the link lights on the network port",,2
+Incident,Hardware,Printer,,,,LJP - Unable to print,,"Step 1:Before you do anything else, turn off the printer and unplug it from the power source
+Step 2:Your printer will have one or more access panels or doors that allow you to get to the paper path. This might be a front cover, a rear access door, or the paper tray slot
+Step 3: Carefully inspect the inside of the printer to find where the paper is stuck. It could be near the paper tray, wrapped around the rollers, or close to the output tray
+Step 4: Once you've located the jam, gently and slowly pull the paper in the direction of the normal paper path. Try to pull it out straight without tearing it. If the paper does tear, do your best to retrieve all the small, torn pieces, as any leftover scraps can cause future jams. If the paper is difficult to remove from one direction, see if you can access it from another panel to ease it out
+Step 5: While you have the printer open, take a moment to inspect the rollers. If they appear dirty, you can wipe them with a lint-free cloth lightly dampened with water or isopropyl alcohol. Ensure the rollers are completely dry before you close the printer
+Step 6: Plug the printer back in and turn it on. It may run through a startup cycle. Try printing a test page to see if the issue is resolved.",,2
+Incident,Hardware,Printer,,,,LJP - Unable to turn on printer,,"Step 1: Before you inspect any cables or connections, disconnect the printer's power cord from the wall outlet. This prevents any risk of electrical shock
+Step 2: Ensure the outlet is working. Unplug the printer and plug in a different device that you know works, like a phone charger. If that device doesn't turn on, the problem is with the outlet or a tripped circuit breaker
+Step 3: Check both end. Make sure the power cord is firmly seated in the back of the printer and also securely plugged into the wall outlet (or power strip). Some cables can feel plugged in when they are actually loose
+Step 4: Turn the printer on using the power button",,2
