@@ -12,6 +12,16 @@ interface Message {
   content: string;
   role: "user" | "assistant";
   timestamp: Date;
+  conversationFlow?: {
+    responseType: 'text' | 'guide_confirmation' | 'step_response';
+    flowState?: {
+      state: string;
+      sessionId?: string;
+      currentStep?: number;
+      awaitingResponseType?: string;
+    };
+    session?: unknown;
+  };
 }
 
 export function ChatInterface() {
@@ -19,6 +29,12 @@ export function ChatInterface() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [userId] = useState<string>(() => 
+    // Generate a simple user ID for session tracking
+    'user_' + Math.random().toString(36).substring(2, 15)
+  );
+  const [showResponseButtons, setShowResponseButtons] = useState(false);
+  const [responseType, setResponseType] = useState<'guide_confirmation' | 'step_response' | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -28,12 +44,13 @@ export function ChatInterface() {
     }
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (messageContent?: string) => {
+    const content = messageContent || input.trim();
+    if (!content || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: input.trim(),
+      content,
       role: "user",
       timestamp: new Date(),
     };
@@ -41,6 +58,7 @@ export function ChatInterface() {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setShowResponseButtons(false);
 
     try {
       const response = await fetch("/api/chat", {
@@ -56,11 +74,12 @@ export function ChatInterface() {
             })),
             {
               role: "user",
-              content: input.trim(),
+              content,
             },
           ],
           agentId: "HelpdeskAgent",
           threadId: threadId, // Pass the thread ID for working memory
+          userId: userId, // Pass user ID for conversation flow
         }),
       });
 
@@ -81,9 +100,25 @@ export function ChatInterface() {
         content: data.content,
         role: "assistant",
         timestamp: new Date(),
+        conversationFlow: data.conversationFlow,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Handle conversation flow response buttons
+      if (data.conversationFlow) {
+        const { responseType: flowResponseType } = data.conversationFlow;
+        if (flowResponseType === 'guide_confirmation' || flowResponseType === 'step_response') {
+          setShowResponseButtons(true);
+          setResponseType(flowResponseType);
+        } else {
+          setShowResponseButtons(false);
+          setResponseType(null);
+        }
+      } else {
+        setShowResponseButtons(false);
+        setResponseType(null);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
@@ -103,6 +138,73 @@ export function ChatInterface() {
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const handleResponseButton = (response: string) => {
+    sendMessage(response);
+  };
+
+  const renderResponseButtons = () => {
+    if (!showResponseButtons || !responseType) return null;
+
+    if (responseType === 'guide_confirmation') {
+      return (
+        <div className="flex gap-2 mt-2 justify-start ml-11">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleResponseButton('Yes')}
+            disabled={isLoading}
+          >
+            Yes
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleResponseButton('No')}
+            disabled={isLoading}
+          >
+            No
+          </Button>
+        </div>
+      );
+    }
+
+    if (responseType === 'step_response') {
+      return (
+        <div className="flex gap-2 mt-2 justify-start ml-11 flex-wrap">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleResponseButton('It worked')}
+            disabled={isLoading}
+            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+          >
+            It worked
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleResponseButton('Still not working')}
+            disabled={isLoading}
+            className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
+          >
+            Still not working
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handleResponseButton('Cannot try now')}
+            disabled={isLoading}
+            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+          >
+            Cannot try now
+          </Button>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -174,6 +276,9 @@ export function ChatInterface() {
                 </div>
               </div>
             )}
+
+            {/* Response buttons */}
+            {renderResponseButtons()}
           </div>
         </ScrollArea>
         
@@ -183,18 +288,23 @@ export function ChatInterface() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your technical question here..."
+              placeholder={showResponseButtons ? "Use the buttons above or type a custom response..." : "Type your technical question here..."}
               disabled={isLoading}
               className="flex-1"
             />
             <Button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim() || isLoading}
               size="icon"
             >
               <SendIcon className="w-4 h-4" />
             </Button>
           </div>
+          {showResponseButtons && (
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Use the response buttons above for quicker replies, or type your own response.
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

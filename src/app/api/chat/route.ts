@@ -2,10 +2,11 @@ import { mastra } from "@/mastra";
 
 export async function POST(req: Request) {
   try {
-    const { messages, threadId, resourceId, agentId } = await req.json();
+    const { messages, threadId, resourceId, agentId, userId } = await req.json();
     console.log("agentId in api", agentId);
     console.log("messages received:", messages);
     console.log("threadId:", threadId);
+    console.log("userId:", userId);
 
     // Use the default agent from mastra registry
     const myAgent = mastra.getAgent(agentId);
@@ -14,6 +15,8 @@ export async function POST(req: Request) {
     if (!myAgent) {
       throw new Error("Agent not found");
     }
+
+    // Note: conversation flow context will be handled by the agent automatically
 
     // Use generate instead of stream for non-streaming response
     // Pass threadId and resourceId for working memory support
@@ -45,10 +48,37 @@ export async function POST(req: Request) {
     
     console.log("=== END ANALYSIS ===");
     
+    // Extract conversation flow information from tool results if available
+    let conversationFlowResult = null;
+    if (response.toolResults && response.toolResults.length > 0) {
+      const flowResult = response.toolResults.find((result: { toolName?: string; result?: unknown }) => 
+        result.toolName === 'conversation_flow'
+      );
+      if (flowResult && flowResult.result) {
+        conversationFlowResult = flowResult.result;
+      }
+    }
+
+    // ALWAYS prioritize the conversation flow response when available
+    let finalContent = response.text || '';
+    if (conversationFlowResult && conversationFlowResult.response) {
+      finalContent = conversationFlowResult.response;
+    }
+    
+    // Ensure we always have some response
+    if (!finalContent || finalContent.trim() === '') {
+      finalContent = "I'm having trouble processing your request. Please try again or contact support.";
+    }
+
     return Response.json({ 
-      content: response.text,
+      content: finalContent,
       threadId: response.threadId || threadId,
-      resourceId: response.resourceId || resourceId
+      resourceId: response.resourceId || resourceId,
+      conversationFlow: conversationFlowResult ? {
+        responseType: conversationFlowResult.responseType,
+        flowState: conversationFlowResult.flowState,
+        session: conversationFlowResult.session
+      } : null
     });
   } catch (error) {
     console.error("Error in chat API:", error);
@@ -57,16 +87,44 @@ export async function POST(req: Request) {
     if (error instanceof Error && error.message && error.message.includes("Thread ID and Memory instance are required")) {
       try {
         console.log("Attempting to retry without working memory...");
-        const { messages, agentId } = await req.json();
+        const { messages, agentId, userId } = await req.json();
         const myAgent = mastra.getAgent(agentId);
         
         if (myAgent) {
           // Try again without threadId to let the agent handle it
           const response = await myAgent.generate(messages);
+          
+          // Extract conversation flow information from retry as well
+          let conversationFlowResult = null;
+          if (response.toolResults && response.toolResults.length > 0) {
+            const flowResult = response.toolResults.find((result: { toolName?: string; result?: unknown }) => 
+              result.toolName === 'conversation_flow'
+            );
+            if (flowResult && flowResult.result) {
+              conversationFlowResult = flowResult.result;
+            }
+          }
+          
+          // ALWAYS prioritize the conversation flow response when available
+          let finalContent = response.text || '';
+          if (conversationFlowResult && conversationFlowResult.response) {
+            finalContent = conversationFlowResult.response;
+          }
+          
+          // Ensure we always have some response
+          if (!finalContent || finalContent.trim() === '') {
+            finalContent = "I'm having trouble processing your request. Please try again or contact support.";
+          }
+
           return Response.json({ 
-            content: response.text,
+            content: finalContent,
             threadId: response.threadId,
-            resourceId: response.resourceId
+            resourceId: response.resourceId,
+            conversationFlow: conversationFlowResult ? {
+              responseType: conversationFlowResult.responseType,
+              flowState: conversationFlowResult.flowState,
+              session: conversationFlowResult.session
+            } : null
           });
         }
       } catch (retryError) {
