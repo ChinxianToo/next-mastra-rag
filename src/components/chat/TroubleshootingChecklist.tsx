@@ -185,7 +185,6 @@ export function TroubleshootingChecklist({
           <Button 
             variant="secondary" 
             className="w-full gap-2 mb-4" 
-            disabled={checkedSteps.size === 0}
             onClick={handleAnotherIssue}
           >
             <RotateCcw className="h-4 w-4" />
