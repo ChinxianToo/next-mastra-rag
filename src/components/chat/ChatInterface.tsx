@@ -415,7 +415,7 @@ export function ChatInterface() {
         <CardContent className="p-4">
           <div className="flex gap-3">
             <Input
-              placeholder="Type your technical question here..."
+              placeholder="Describe your issue here..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}

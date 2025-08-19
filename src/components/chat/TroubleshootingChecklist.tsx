@@ -27,35 +27,7 @@ export function TroubleshootingChecklist({
 
   const progress = (checkedSteps.size / steps.length) * 100;
 
-  // Extract meaningful step titles from the full step text
-  const getStepTitle = (step: string) => {
-    // Look for common patterns in step descriptions
-    if (step.toLowerCase().includes('power') && step.toLowerCase().includes('cable')) {
-      return 'Check Power Connections';
-    }
-    if (step.toLowerCase().includes('power cycle') || step.toLowerCase().includes('unplug')) {
-      return 'Power Cycle the Monitor';
-    }
-    if (step.toLowerCase().includes('restart') || step.toLowerCase().includes('reboot')) {
-      return 'Perform PC Restart';
-    }
-    if (step.toLowerCase().includes('usb')) {
-      return 'Remove USB Devices';
-    }
-    if (step.toLowerCase().includes('ethernet') || step.toLowerCase().includes('cable')) {
-      return 'Ensure the Ethernet cable...';
-    }
-    if (step.toLowerCase().includes('different') && step.toLowerCase().includes('cable')) {
-      return 'If possible, try a...';
-    }
-    
-    // Fallback: use first 4-5 words with ellipsis
-    const words = step.split(' ');
-    if (words.length <= 5) {
-      return step;
-    }
-    return words.slice(0, 4).join(' ') + '...';
-  };
+
 
   const handleStepCheck = (stepIndex: number, checked: boolean) => {
     const stepId = `step-${stepIndex}`;
@@ -90,118 +62,103 @@ export function TroubleshootingChecklist({
   };
 
   return (
-    <Card className="mb-8 shadow-lg border-2">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Monitor className="h-5 w-5 text-primary" />
-            <CardTitle className="font-heading font-bold text-xl">{guideTitle}</CardTitle>
-          </div>
-          <Badge variant="secondary" className="bg-accent/20 text-accent-foreground">
-            Active Issue
-          </Badge>
+    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Monitor className="h-5 w-5 text-red-600" />
+          <h1 className="text-lg font-semibold text-gray-900">{guideTitle}</h1>
         </div>
-        <CardDescription className="text-base">
-          Check each step as you attempt it, then choose an outcome below.
-        </CardDescription>
+        <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-sm px-3 py-1">
+          Active Issue
+        </Badge>
+      </div>
 
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="flex justify-between text-sm text-muted-foreground mb-2">
-            <span>Progress</span>
-            <span>
-              {checkedSteps.size}/{steps.length} steps completed
-            </span>
-          </div>
-          <Progress value={progress} className="h-2" />
+      <p className="text-gray-600 mb-6">Check each step as you attempt it, then choose an outcome below.</p>
+
+      <div className="mb-6">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Progress</span>
+          <span>
+            {checkedSteps.size}/{steps.length} steps completed
+          </span>
         </div>
-      </CardHeader>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
 
-      <CardContent className="space-y-6">
-
-        {/* Troubleshooting Steps */}
+      <div className="space-y-4 mb-6">
         {steps.map((step, index) => (
-          <div key={index} className="flex gap-4 p-4 rounded-lg bg-card/50 border border-border/50">
-            <Checkbox
-              id={`step-${index}`}
-              checked={checkedSteps.has(`step-${index}`)}
-              onCheckedChange={(checked) => handleStepCheck(index, checked as boolean)}
-              className="mt-1"
-            />
-            <div className="flex-1">
-              <label
-                htmlFor={`step-${index}`}
-                className="block font-semibold text-foreground mb-2 cursor-pointer"
-              >
-                Step {index + 1}: {getStepTitle(step)}
-              </label>
-              <p className="text-muted-foreground leading-relaxed">{step}</p>
+          <div key={index} className="border border-gray-200 rounded-lg p-4">
+            <div className="flex gap-3">
+              <Checkbox
+                id={`step-${index}`}
+                checked={checkedSteps.has(`step-${index}`)}
+                onCheckedChange={(checked) => handleStepCheck(index, checked as boolean)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <label htmlFor={`step-${index}`} className="block font-medium text-gray-900 cursor-pointer leading-relaxed">
+                  Step {index + 1}: {step}
+                </label>
+              </div>
             </div>
           </div>
         ))}
+      </div>
 
-        {/* Warning Message */}
-        {checkedSteps.size === 0 && (
-          <div className="flex items-center gap-2 p-4 bg-accent/10 border border-accent/20 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-accent flex-shrink-0" />
-            <p className="text-accent-foreground font-medium">
-              Please attempt at least one step before choosing an outcome
-            </p>
-          </div>
-        )}
+      {checkedSteps.size === 0 && (
+        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-6">
+          <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+          <p className="text-orange-800 text-sm">Please attempt at least one step before choosing an outcome</p>
+        </div>
+      )}
 
-        {/* Outcome Section */}
-        <div className="border-t border-border pt-6">
-          <h3 className="font-semibold text-foreground mb-4">How did the troubleshooting go?</h3>
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="font-semibold text-gray-900 mb-4">How did the troubleshooting go?</h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <Button
-              variant="outline"
-              className="h-auto p-4 justify-start gap-3 border-2 hover:border-primary hover:bg-primary/5 bg-transparent"
-              disabled={checkedSteps.size === 0}
-              onClick={() => handleOutcome('resolved')}
-            >
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div className="text-left">
-                <div className="font-semibold">Resolved</div>
-                <div className="text-sm text-muted-foreground">Issue is fixed</div>
-              </div>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="h-auto p-4 justify-start gap-3 border-2 hover:border-destructive hover:bg-destructive/5 bg-transparent"
-              disabled={checkedSteps.size === 0}
-              onClick={() => handleOutcome('not_resolved')}
-            >
-              <XCircle className="h-5 w-5 text-destructive" />
-              <div className="text-left">
-                <div className="font-semibold">Not Resolved</div>
-                <div className="text-sm text-muted-foreground">Still having issues</div>
-              </div>
-            </Button>
-          </div>
-
-          <Button 
-            variant="secondary" 
-            className="w-full gap-2 mb-4" 
-            onClick={handleAnotherIssue}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <Button
+            variant="outline"
+            className="h-auto p-4 justify-start gap-3 border-gray-200 hover:bg-gray-50 bg-white disabled:opacity-50"
+            disabled={checkedSteps.size === 0}
+            onClick={() => handleOutcome('resolved')}
           >
-            <RotateCcw className="h-4 w-4" />
-            Another Issue
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <div className="text-left">
+              <div className="font-medium text-sm text-gray-900">Resolved</div>
+              <div className="text-xs text-gray-500">Issue is fixed</div>
+            </div>
           </Button>
 
-          {checkedSteps.size === 0 && (
-            <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
-              <p className="text-accent-foreground text-sm font-medium">
-                Please attempt at least one troubleshooting step before marking as resolved or not resolved.
-              </p>
+          <Button
+            variant="outline"
+            className="h-auto p-4 justify-start gap-3 border-gray-200 hover:bg-gray-50 bg-white disabled:opacity-50"
+            disabled={checkedSteps.size === 0}
+            onClick={() => handleOutcome('not_resolved')}
+          >
+            <XCircle className="h-4 w-4 text-red-600" />
+            <div className="text-left">
+              <div className="font-medium text-sm text-gray-900">Not Resolved</div>
+              <div className="text-xs text-gray-500">Still having issues</div>
             </div>
-          )}
+          </Button>
         </div>
 
+        <Button
+          variant="outline"
+          className="w-full gap-2 border-gray-200 hover:bg-gray-50 bg-orange-100 text-orange-800 border-orange-200"
+          onClick={handleAnotherIssue}
+        >
+          <RotateCcw className="h-4 w-4" />
+          Another Issue
+        </Button>
 
-      </CardContent>
-    </Card>
+        
+      </div>
+    </div>
   );
 }
