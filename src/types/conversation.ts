@@ -115,3 +115,32 @@ export interface CreateTicketData {
   sessionId: string;
   matchedGuideTitle: string;
 }
+
+// Interactive checklist form types
+export interface ChecklistStep {
+  id: string;
+  stepNumber: number;
+  stepText: string;
+  attempted: boolean;
+}
+
+export interface ChecklistForm {
+  id: string;
+  sessionId: string;
+  guideTitle: string;
+  steps: ChecklistStep[];
+  canResolve: boolean; // true when at least one step is attempted
+}
+
+export interface ChecklistOutcome {
+  type: 'resolved' | 'not_resolved' | 'another_issue';
+  sessionId: string;
+  attemptedSteps: string[]; // IDs of attempted steps
+}
+
+export interface TroubleshootingGuideResponse {
+  type: 'checklist';
+  guideTitle: string;
+  steps: string[];
+  sessionId: string;
+}

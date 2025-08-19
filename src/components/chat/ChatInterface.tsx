@@ -3,9 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { BotIcon, UserIcon, SendIcon, Loader2Icon } from "lucide-react";
+import { TroubleshootingChecklist } from "./TroubleshootingChecklist";
+import { ChecklistOutcome } from "@/types/conversation";
 
 interface Message {
   id: string;
@@ -35,6 +37,11 @@ export function ChatInterface() {
   );
   const [showResponseButtons, setShowResponseButtons] = useState(false);
   const [responseType, setResponseType] = useState<'guide_confirmation' | 'step_response' | null>(null);
+  const [checklistData, setChecklistData] = useState<{
+    guideTitle: string;
+    steps: string[];
+    sessionId: string;
+  } | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -95,29 +102,54 @@ export function ChatInterface() {
         setThreadId(data.threadId);
       }
       
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.content,
-        role: "assistant",
-        timestamp: new Date(),
-        conversationFlow: data.conversationFlow,
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Handle conversation flow response buttons
-      if (data.conversationFlow) {
-        const { responseType: flowResponseType } = data.conversationFlow;
-        if (flowResponseType === 'guide_confirmation' || flowResponseType === 'step_response') {
-          setShowResponseButtons(true);
-          setResponseType(flowResponseType);
+      // Check if response contains checklist format
+      const checklist = parseChecklistResponse(data.content);
+      if (checklist) {
+        // Get session ID from response
+        const sessionId = data.conversationFlow?.session?.id || 
+                         (data.conversationFlow && data.conversationFlow.session ? data.conversationFlow.session.id : null) ||
+                         'temp-session';
+        
+        setChecklistData({
+          ...checklist,
+          sessionId
+        });
+        setShowResponseButtons(false);
+        setResponseType(null);
+        
+        // Don't show the raw checklist text, only show a simple message
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `I found a troubleshooting guide for your issue. Please use the interactive checklist below to work through the steps.`,
+          role: "assistant",
+          timestamp: new Date(),
+          conversationFlow: data.conversationFlow,
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        // Normal message handling
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: data.content,
+          role: "assistant",
+          timestamp: new Date(),
+          conversationFlow: data.conversationFlow,
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        // Handle conversation flow response buttons
+        if (data.conversationFlow) {
+          const { responseType: flowResponseType } = data.conversationFlow;
+          if (flowResponseType === 'guide_confirmation' || flowResponseType === 'step_response') {
+            setShowResponseButtons(true);
+            setResponseType(flowResponseType);
+          } else {
+            setShowResponseButtons(false);
+            setResponseType(null);
+          }
         } else {
           setShowResponseButtons(false);
           setResponseType(null);
         }
-      } else {
-        setShowResponseButtons(false);
-        setResponseType(null);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -143,6 +175,93 @@ export function ChatInterface() {
   const handleResponseButton = (response: string) => {
     sendMessage(response);
   };
+
+  // Parse checklist format from agent response
+  const parseChecklistResponse = (response: string): { guideTitle: string; steps: string[] } | null => {
+    const startMarker = 'CHECKLIST_FORM_START';
+    const endMarker = 'CHECKLIST_FORM_END';
+    
+    if (!response.includes(startMarker) || !response.includes(endMarker)) {
+      return null;
+    }
+
+    const start = response.indexOf(startMarker) + startMarker.length;
+    const end = response.indexOf(endMarker);
+    
+    if (start >= end) return null;
+
+    const checklistContent = response.substring(start, end).trim();
+    const lines = checklistContent.split('\n').map(line => line.trim()).filter(line => line);
+
+    let title = '';
+    const steps: string[] = [];
+
+    for (const line of lines) {
+      if (line.startsWith('TITLE:')) {
+        title = line.substring(6).trim();
+      } else if (line.startsWith('STEP:')) {
+        steps.push(line.substring(5).trim());
+      }
+    }
+
+    if (!title || steps.length === 0) return null;
+
+    return { guideTitle: title, steps };
+  };
+
+  // Handle checklist outcome
+  const handleChecklistOutcome = async (outcome: ChecklistOutcome) => {
+    setIsLoading(true);
+    setChecklistData(null);
+
+    try {
+      const response = await fetch("/api/chat/checklist-outcome", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outcome,
+          userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to process checklist outcome");
+      }
+
+      const data = await response.json();
+      
+      const assistantMessage: Message = {
+        id: Date.now().toString(),
+        content: data.content,
+        role: "assistant",
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+      // If it's "another issue", clear the UI for new input
+      if (outcome.type === 'another_issue') {
+        setChecklistData(null);
+        setShowResponseButtons(false);
+        setResponseType(null);
+      }
+    } catch (error) {
+      console.error("Error processing checklist outcome:", error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "Sorry, I encountered an error processing your response. Please try again.",
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   const renderResponseButtons = () => {
     if (!showResponseButtons || !responseType) return null;
@@ -208,105 +327,119 @@ export function ChatInterface() {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto h-full flex flex-col overflow-hidden">
-      <CardHeader className="border-b flex-shrink-0 bg-background">
-        <CardTitle className="flex items-center gap-2">
-          <BotIcon className="w-5 h-5" />
-            AI Troubleshooting Guide
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-        <ScrollArea className="flex-1 p-4 overflow-hidden" ref={scrollAreaRef}>
-          <div className="space-y-4 w-full min-h-full">
-            {messages.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">
+    <div className="h-full flex flex-col gap-4">
+      {/* Chat Messages Area - Always show */}
+      <Card className="flex-1 min-h-0 bg-white border border-gray-200 shadow-sm">
+        <CardContent className="p-6 h-full flex flex-col">
+          {messages.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-gray-500">
                 <BotIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium">Welcome to AI Troubleshooting Guide</p>
                 <p className="text-sm">Ask me any technical questions and I&apos;ll help you troubleshoot!</p>
               </div>
-            )}
-            
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 w-full ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {message.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <BotIcon className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-                
+            </div>
+          ) : (
+            <div className="flex-1 space-y-4 overflow-y-auto" ref={scrollAreaRef}>
+              {messages.map((message) => (
                 <div
-                  className={`max-w-[80%] min-w-[200px] rounded-lg px-4 py-2 break-words overflow-hidden ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                  key={message.id}
+                  className={`flex gap-3 w-full ${
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap break-words overflow-hidden text-sm">
-                    {message.content}
+                  {message.role === "assistant" && (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <BotIcon className="w-4 h-4 text-gray-600" />
+                    </div>
+                  )}
+                  
+                  <div
+                    className={`max-w-[80%] min-w-[200px] rounded-lg px-4 py-3 break-words overflow-hidden ${
+                      message.role === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap break-words overflow-hidden text-sm">
+                      {message.content}
+                    </div>
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
                   </div>
-                  <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+                  
+                  {message.role === "user" && (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                  )}
                 </div>
-                
-                {message.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <UserIcon className="w-4 h-4" />
+              ))}
+              
+              {isLoading && (
+                <div className="flex gap-3 justify-start">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <BotIcon className="w-4 h-4 text-gray-600" />
                   </div>
-                )}
-              </div>
-            ))}
-            
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                  <BotIcon className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="bg-muted rounded-lg px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <Loader2Icon className="w-4 h-4 animate-spin" />
-                    <span>Thinking...</span>
+                  <div className="bg-gray-100 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Loader2Icon className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Thinking...</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Response buttons */}
-            {renderResponseButtons()}
-          </div>
-        </ScrollArea>
-        
-        <div className="border-t p-4 flex-shrink-0 bg-background">
-          <div className="flex gap-2">
+              {/* Response buttons */}
+              {renderResponseButtons()}
+
+              {/* Troubleshooting Checklist - Show within conversation */}
+              {checklistData && (
+                <div className="mt-4">
+                  <TroubleshootingChecklist
+                    guideTitle={checklistData.guideTitle}
+                    steps={checklistData.steps}
+                    sessionId={checklistData.sessionId}
+                    onOutcome={handleChecklistOutcome}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Question Input */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex gap-3">
             <Input
+              placeholder="Type your technical question here..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={showResponseButtons ? "Use the buttons above or type a custom response..." : "Type your technical question here..."}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 h-12 px-4 border-gray-300 rounded-lg text-base placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500"
             />
-            <Button
+            <Button 
+              size="lg" 
+              className="h-12 px-6 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg gap-2"
               onClick={() => sendMessage()}
               disabled={!input.trim() || isLoading}
-              size="icon"
             >
-              <SendIcon className="w-4 h-4" />
+              {isLoading ? (
+                <Loader2Icon className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <SendIcon className="h-4 w-4" />
+                  Ask AI
+                </>
+              )}
             </Button>
           </div>
-          {showResponseButtons && (
-            <p className="text-xs text-muted-foreground mt-2">
-              💡 Use the response buttons above for quicker replies, or type your own response.
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 } 

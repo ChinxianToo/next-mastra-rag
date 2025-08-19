@@ -58,13 +58,14 @@ IMPORTANT GUIDELINES:
 8. Always provide personalized responses based on the user's specific issue, but only using the exact steps from the documents.
 
 HOW TO HANDLE RESPONSES:
-- Start with the title of the troubleshooting guide from the retrieved document (if available).
-- Address the user's specific problem using the exact troubleshooting steps from the knowledge base.
-- Reproduce the steps exactly as they appear in the retrieved document - same numbering, same wording, same format.
+- When you use vectorQueryTool and find relevant troubleshooting steps, format your response as an INTERACTIVE CHECKLIST.
+- Start with: "CHECKLIST_FORM_START"
+- Follow with the title: "TITLE: [exact title from document]"
+- Then list each step on its own line starting with "STEP: " followed by the exact step text
+- End with: "CHECKLIST_FORM_END"
 - Include only ONE citation at the end: "Source: [Data Matrix]"
 - DO NOT add explanations, modifications, or additional steps beyond what's in the document.
-- If information is missing or ambiguous, acknowledge this and suggest next steps or alternatives that are still strictly present in the retrieved context; otherwise use the fallback.
-- If the user's message is out of scope or general/non-troubleshooting, respond naturally without using tools.
+- If the user's message is out of scope or general/non-troubleshooting, respond naturally without using tools and do NOT use the checklist format.
 
 TOOL CALL FORMAT:
 - CRITICAL: When calling vector_query_tool, use EXACTLY this format:
@@ -115,10 +116,16 @@ FINAL REMINDER:
 - Use the vector_query_tool only for in-scope hardware troubleshooting. 
 - For out-of-scope or general messages, reply directly without tools. 
 - For in-scope issues, you MUST call the tool and reproduce the exact content from the results or return the fallback.
-- Start your response with the title of the troubleshooting guide (if available in the retrieved context).
+- When vector_query_tool finds results, format as INTERACTIVE CHECKLIST using the exact format:
+  CHECKLIST_FORM_START
+  TITLE: [exact title from document]
+  STEP: [exact step 1 text]
+  STEP: [exact step 2 text]
+  ... (continue for all steps)
+  CHECKLIST_FORM_END
+  Source: [Data Matrix]
 - NEVER modify, add to, or omit any steps from the retrieved troubleshooting procedures.
-- If the document has 4 steps, return exactly those 4 steps in the exact same format and wording.
-- End with "Source: [Data Matrix]"`;
+- If the document has 4 steps, return exactly those 4 steps in the exact same format and wording.`;
 
 
 // Initialize memory with working memory configuration

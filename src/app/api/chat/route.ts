@@ -8,6 +8,8 @@ export async function POST(req: Request) {
     console.log("threadId:", threadId);
     console.log("userId:", userId);
 
+    // Note: Simplified implementation without database persistence
+
     // Use the default agent from mastra registry
     const myAgent = mastra.getAgent(agentId);
     console.log("Agent retrieved:", myAgent ? "success" : "failed");
@@ -70,6 +72,52 @@ export async function POST(req: Request) {
       finalContent = "I'm having trouble processing your request. Please try again or contact support.";
     }
 
+    // Check if response contains checklist format and create temporary session data
+    let sessionData = null;
+    if (finalContent.includes('CHECKLIST_FORM_START') && finalContent.includes('CHECKLIST_FORM_END')) {
+      try {
+        // Parse the checklist to get the guide title
+        const startMarker = 'CHECKLIST_FORM_START';
+        const endMarker = 'CHECKLIST_FORM_END';
+        const start = finalContent.indexOf(startMarker) + startMarker.length;
+        const end = finalContent.indexOf(endMarker);
+        
+        if (start < end) {
+          const checklistContent = finalContent.substring(start, end).trim();
+          const lines = checklistContent.split('\n').map((line: string) => line.trim()).filter((line: string) => line);
+          
+          let title = '';
+          for (const line of lines) {
+            if (line.startsWith('TITLE:')) {
+              title = line.substring(6).trim();
+              break;
+            }
+          }
+          
+          if (title) {
+            // Get the last user message as the issue description
+            const lastUserMessage = messages.filter((msg: { role: string }) => msg.role === 'user').pop();
+            const issueDescription = lastUserMessage?.content || 'Hardware troubleshooting issue';
+            
+            // Create temporary session data for UI
+            sessionData = {
+              id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+              userId: userId || 'anonymous',
+              issueDescription,
+              matchedGuideTitle: title,
+              resolved: false,
+              abandoned: false,
+              startedAt: new Date()
+            };
+            
+            console.log('Created temporary session:', sessionData.id, 'for guide:', title);
+          }
+        }
+      } catch (error) {
+        console.error('Error creating temporary session for checklist:', error);
+      }
+    }
+
     return Response.json({ 
       content: finalContent,
       threadId: response.threadId || threadId,
@@ -77,8 +125,8 @@ export async function POST(req: Request) {
       conversationFlow: conversationFlowResult ? {
         responseType: conversationFlowResult.responseType,
         flowState: conversationFlowResult.flowState,
-        session: conversationFlowResult.session
-      } : null
+        session: conversationFlowResult.session || sessionData
+      } : sessionData ? { session: sessionData } : null
     });
   } catch (error) {
     console.error("Error in chat API:", error);
@@ -87,7 +135,7 @@ export async function POST(req: Request) {
     if (error instanceof Error && error.message && error.message.includes("Thread ID and Memory instance are required")) {
       try {
         console.log("Attempting to retry without working memory...");
-        const { messages, agentId, userId } = await req.json();
+        const { messages, agentId} = await req.json();
         const myAgent = mastra.getAgent(agentId);
         
         if (myAgent) {
