@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  phoneNumber  String
+  email        String
+  createdAt    DateTime  @default(now())
+  sessions     TroubleshootingSession[]
+}
+
+model TroubleshootingSession {
+  id               String                @id @default(uuid())
+  userId           String
+  issueDescription String
+  matchedGuideTitle String
+  resolved         Boolean               @default(false)
+  earlyExit        Boolean               @default(false)
+  misclassified    Boolean               @default(false)
+  abandoned        Boolean               @default(false) // NEW: handles user exit mid-flow
+  startedAt        DateTime              @default(now())
+  completedAt      DateTime?
+  user             User                  @relation(fields: [userId], references: [id])
+  steps            TroubleshootingStep[]
+  unresolvedTicket Ticket?
+}
+
+model TroubleshootingStep {
+  id              String     @id @default(uuid())
+  stepNumber      Int
+  stepText        String
+  attempted       Boolean
+  resolvedIssue   Boolean
+  respondedAt     DateTime   @default(now())
+  sessionId       String
+  session         TroubleshootingSession @relation(fields: [sessionId], references: [id])
+}
+
+model Ticket {
+  id               String     @id @default(uuid())
+  sessionId        String     @unique
+  matchedGuideTitle String
+  createdAt        DateTime   @default(now())
+  session          TroubleshootingSession @relation(fields: [sessionId], references: [id])
+}

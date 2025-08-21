@@ -8,7 +8,7 @@ import mammoth from "mammoth";
 import { parse as csvParse } from "csv-parse/sync";
 
 // Define PostgreSQL connection string
-const DOCS_DIR = "./src/documents";
+const DOCS_DIR = "../src/documents";
 const INDEX_NAME = "helpdesk_troubleshooting_documents";
 
 // Function to extract text from docx

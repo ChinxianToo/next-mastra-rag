@@ -15,7 +15,7 @@ interface Message {
   role: "user" | "assistant";
   timestamp: Date;
   conversationFlow?: {
-    responseType: 'text' | 'guide_confirmation' | 'step_response';
+    responseType: 'text';
     flowState?: {
       state: string;
       sessionId?: string;
@@ -35,8 +35,7 @@ export function ChatInterface() {
     // Generate a simple user ID for session tracking
     'user_' + Math.random().toString(36).substring(2, 15)
   );
-  const [showResponseButtons, setShowResponseButtons] = useState(false);
-  const [responseType, setResponseType] = useState<'guide_confirmation' | 'step_response' | null>(null);
+
   const [checklistData, setChecklistData] = useState<{
     guideTitle: string;
     steps: string[];
@@ -65,7 +64,6 @@ export function ChatInterface() {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-    setShowResponseButtons(false);
 
     try {
       const response = await fetch("/api/chat", {
@@ -114,8 +112,6 @@ export function ChatInterface() {
           ...checklist,
           sessionId
         });
-        setShowResponseButtons(false);
-        setResponseType(null);
         
         // Don't show the raw checklist text, only show a simple message
         const assistantMessage: Message = {
@@ -136,20 +132,6 @@ export function ChatInterface() {
           conversationFlow: data.conversationFlow,
         };
         setMessages(prev => [...prev, assistantMessage]);
-        // Handle conversation flow response buttons
-        if (data.conversationFlow) {
-          const { responseType: flowResponseType } = data.conversationFlow;
-          if (flowResponseType === 'guide_confirmation' || flowResponseType === 'step_response') {
-            setShowResponseButtons(true);
-            setResponseType(flowResponseType);
-          } else {
-            setShowResponseButtons(false);
-            setResponseType(null);
-          }
-        } else {
-          setShowResponseButtons(false);
-          setResponseType(null);
-        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -172,9 +154,7 @@ export function ChatInterface() {
     }
   };
 
-  const handleResponseButton = (response: string) => {
-    sendMessage(response);
-  };
+
 
   // Parse checklist format from agent response
   const parseChecklistResponse = (response: string): { guideTitle: string; steps: string[] } | null => {
@@ -244,8 +224,6 @@ export function ChatInterface() {
       // If it's "another issue", clear the UI for new input
       if (outcome.type === 'another_issue') {
         setChecklistData(null);
-        setShowResponseButtons(false);
-        setResponseType(null);
       }
     } catch (error) {
       console.error("Error processing checklist outcome:", error);
@@ -263,68 +241,7 @@ export function ChatInterface() {
 
 
 
-  const renderResponseButtons = () => {
-    if (!showResponseButtons || !responseType) return null;
 
-    if (responseType === 'guide_confirmation') {
-      return (
-        <div className="flex gap-2 mt-2 justify-start ml-11">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleResponseButton('Yes')}
-            disabled={isLoading}
-          >
-            Yes
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleResponseButton('No')}
-            disabled={isLoading}
-          >
-            No
-          </Button>
-        </div>
-      );
-    }
-
-    if (responseType === 'step_response') {
-      return (
-        <div className="flex gap-2 mt-2 justify-start ml-11 flex-wrap">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleResponseButton('It worked')}
-            disabled={isLoading}
-            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-          >
-            It worked
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleResponseButton('Still not working')}
-            disabled={isLoading}
-            className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
-          >
-            Still not working
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => handleResponseButton('Cannot try now')}
-            disabled={isLoading}
-            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-          >
-            Cannot try now
-          </Button>
-        </div>
-      );
-    }
-
-    return null;
-  };
 
   return (
     <div className="h-full flex flex-col gap-4">
@@ -357,8 +274,8 @@ export function ChatInterface() {
                   <div
                     className={`max-w-[80%] min-w-[200px] rounded-lg px-4 py-3 break-words overflow-hidden ${
                       message.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-900"
+                        ? "bg-[#F7F7F2] text-black"
+                        : "bg-gray-100 text-black"
                     }`}
                   >
                     <div className="whitespace-pre-wrap break-words overflow-hidden text-sm">
@@ -391,8 +308,7 @@ export function ChatInterface() {
                 </div>
               )}
 
-              {/* Response buttons */}
-              {renderResponseButtons()}
+
 
               {/* Troubleshooting Checklist - Show within conversation */}
               {checklistData && (
@@ -412,7 +328,7 @@ export function ChatInterface() {
 
       {/* Question Input */}
       <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardContent className="p-4">
+        <CardContent className="p-4 bg-[#F7F7F2]">
           <div className="flex gap-3">
             <Input
               placeholder="Describe your issue here..."

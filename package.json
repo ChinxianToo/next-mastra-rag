@@ -6,7 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ingest-docs": "tsx scripts/ingest-documents.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.23",
@@ -14,28 +19,19 @@
     "@mastra/memory": "^0.12.0",
     "@mastra/pg": "^0.13.1",
     "@mastra/rag": "^1.0.6",
-    "@prisma/client": "^6.14.0",
     "@radix-ui/react-checkbox": "^1.3.3",
-    "@radix-ui/react-collapsible": "^1.1.11",
-    "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-progress": "^1.1.7",
-    "@radix-ui/react-scroll-area": "^1.2.9",
-    "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-tooltip": "^1.2.7",
     "ai": "^4.3.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "csv-parse": "^6.1.0",
     "lucide-react": "^0.536.0",
-    "mammoth": "^1.10.0",
     "next": "15.4.5",
-    "pdf-parse": "^1.1.1",
+    "@prisma/client": "^6.4.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tailwind-merge": "^3.3.1",
-    "zod": "^3.25.76",
-    "zustand": "^5.0.7"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -44,9 +40,14 @@
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "csv-parse": "^6.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
+    "mammoth": "^1.10.0",
+    "pdf-parse": "^1.1.1",
+    "prisma": "^6.4.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.7.0",
+    "typescript": "^5.8.3"
   }
 }

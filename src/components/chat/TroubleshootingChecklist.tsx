@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChecklistOutcome } from "@/types/conversation";
 import { AlertTriangle, CheckCircle, XCircle, Monitor, RotateCcw } from "lucide-react";
@@ -62,13 +60,13 @@ export function TroubleshootingChecklist({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+    <div className="bg-[#F7F7F2] rounded-lg border border-gray-200 p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Monitor className="h-5 w-5 text-red-600" />
           <h1 className="text-lg font-semibold text-gray-900">{guideTitle}</h1>
         </div>
-        <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-sm px-3 py-1">
+        <Badge variant="secondary" className="bg-[#F5F5DC] text-gray-700 text-sm px-3 py-1">
           Active Issue
         </Badge>
       </div>
@@ -82,7 +80,7 @@ export function TroubleshootingChecklist({
             {checkedSteps.size}/{steps.length} steps completed
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-[#E0BB5E] rounded-full h-2">
           <div
             className="bg-orange-500 h-2 rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}

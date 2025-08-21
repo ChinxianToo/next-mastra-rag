@@ -68,7 +68,7 @@ export interface ConversationContext {
   totalSteps?: number;
   matchedGuides?: GuideMatch[];
   selectedGuide?: GuideMatch;
-  awaitingResponseType?: 'guide_confirmation' | 'step_result';
+  awaitingResponseType?: 'step_result';
 }
 
 export interface GuideMatch {
