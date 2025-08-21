@@ -18,11 +18,11 @@ export interface TroubleshootingSession {
   misclassified: boolean;
   abandoned: boolean;
   startedAt: Date;
-  completedAt?: Date;
+  completedAt?: Date | null;
   currentStepNumber?: number;
   user?: User;
   steps?: TroubleshootingStep[];
-  unresolvedTicket?: Ticket;
+  unresolvedTicket?: Ticket | null;
 }
 
 export interface TroubleshootingStep {
@@ -40,6 +40,7 @@ export interface Ticket {
   sessionId: string;
   matchedGuideTitle: string;
   createdAt: Date;
+  session?: TroubleshootingSession;
 }
 
 // Conversation flow state types
@@ -136,6 +137,11 @@ export interface ChecklistOutcome {
   type: 'resolved' | 'not_resolved' | 'another_issue';
   sessionId: string;
   attemptedSteps: string[]; // IDs of attempted steps
+  stepDetails: Array<{
+    stepNumber: number;
+    stepText: string;
+    attempted: boolean;
+  }>; // Full step details for database recording
 }
 
 export interface TroubleshootingGuideResponse {

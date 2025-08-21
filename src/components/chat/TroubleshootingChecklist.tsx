@@ -42,20 +42,34 @@ export function TroubleshootingChecklist({
 
   const handleOutcome = (type: 'resolved' | 'not_resolved') => {
     const attemptedSteps = Array.from(checkedSteps);
+    const stepDetails = steps.map((stepText, index) => ({
+      stepNumber: index + 1,
+      stepText,
+      attempted: checkedSteps.has(`step-${index}`)
+    }));
+    
     onOutcome({
       type,
       sessionId,
-      attemptedSteps
+      attemptedSteps,
+      stepDetails
     });
   };
 
   const handleAnotherIssue = () => {
     // Mark current session as abandoned and trigger new issue flow
     const attemptedSteps = Array.from(checkedSteps);
+    const stepDetails = steps.map((stepText, index) => ({
+      stepNumber: index + 1,
+      stepText,
+      attempted: checkedSteps.has(`step-${index}`)
+    }));
+    
     onOutcome({
       type: 'another_issue',
       sessionId,
-      attemptedSteps
+      attemptedSteps,
+      stepDetails
     });
   };
 

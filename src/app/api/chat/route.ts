@@ -1,4 +1,5 @@
 import { mastra } from "@/mastra";
+import { createTroubleshootingSession } from "@/lib/database";
 
 export async function POST(req: Request) {
   try {
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
       finalContent = "I'm having trouble processing your request. Please try again or contact support.";
     }
 
-    // Check if response contains checklist format and create temporary session data
+    // Check if response contains checklist format and create database session
     let sessionData = null;
     if (finalContent.includes('CHECKLIST_FORM_START') && finalContent.includes('CHECKLIST_FORM_END')) {
       try {
@@ -99,22 +100,43 @@ export async function POST(req: Request) {
             const lastUserMessage = messages.filter((msg: { role: string }) => msg.role === 'user').pop();
             const issueDescription = lastUserMessage?.content || 'Hardware troubleshooting issue';
             
-            // Create temporary session data for UI
-            sessionData = {
-              id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
-              userId: userId || 'anonymous',
-              issueDescription,
-              matchedGuideTitle: title,
-              resolved: false,
-              abandoned: false,
-              startedAt: new Date()
-            };
-            
-            console.log('Created temporary session:', sessionData.id, 'for guide:', title);
+            // Create database session
+            try {
+              const dbSession = await createTroubleshootingSession({
+                userId: userId || 'demo_user',
+                issueDescription,
+                matchedGuideTitle: title,
+              });
+              
+              sessionData = {
+                id: dbSession.id,
+                userId: dbSession.userId,
+                issueDescription: dbSession.issueDescription,
+                matchedGuideTitle: dbSession.matchedGuideTitle,
+                resolved: dbSession.resolved,
+                abandoned: dbSession.abandoned,
+                startedAt: dbSession.startedAt
+              };
+              
+              console.log('Created database session:', sessionData.id, 'for guide:', title);
+            } catch (dbError) {
+              console.error('Error creating database session:', dbError);
+              // Fallback to temporary session
+              sessionData = {
+                id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+                userId: userId || 'anonymous',
+                issueDescription,
+                matchedGuideTitle: title,
+                resolved: false,
+                abandoned: false,
+                startedAt: new Date()
+              };
+              console.log('Created fallback temporary session:', sessionData.id);
+            }
           }
         }
       } catch (error) {
-        console.error('Error creating temporary session for checklist:', error);
+        console.error('Error creating session for checklist:', error);
       }
     }
 
