@@ -4,6 +4,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ChecklistOutcome } from "@/types/conversation";
 import { AlertTriangle, CheckCircle, XCircle, Monitor, RotateCcw } from "lucide-react";
 
@@ -21,7 +30,7 @@ export function TroubleshootingChecklist({
   onOutcome
 }: TroubleshootingChecklistProps) {
   const [checkedSteps, setCheckedSteps] = useState<Set<string>>(new Set());
-  
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const progress = (checkedSteps.size / steps.length) * 100;
 
@@ -57,6 +66,10 @@ export function TroubleshootingChecklist({
   };
 
   const handleAnotherIssue = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const confirmAnotherIssue = () => {
     // Mark current session as abandoned and trigger new issue flow
     const attemptedSteps = Array.from(checkedSteps);
     const stepDetails = steps.map((stepText, index) => ({
@@ -71,6 +84,8 @@ export function TroubleshootingChecklist({
       attemptedSteps,
       stepDetails
     });
+    
+    setShowConfirmDialog(false);
   };
 
   return (
@@ -122,52 +137,91 @@ export function TroubleshootingChecklist({
         ))}
       </div>
 
-      {checkedSteps.size === 0 && (
-        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-6">
-          <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
-          <p className="text-orange-800 text-sm">Please attempt at least one step before choosing an outcome</p>
-        </div>
-      )}
-
       <div className="border-t border-gray-200 pt-6">
         <h3 className="font-semibold text-gray-900 mb-4">How did the troubleshooting go?</h3>
+
+        {checkedSteps.size === 0 && (
+          <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+            <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+            <p className="text-orange-800 text-sm">Please attempt at least one troubleshooting step before marking as resolved or not resolved</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <Button
             variant="outline"
-            className="h-auto p-4 justify-start gap-3 border-gray-200 hover:bg-gray-50 bg-white disabled:opacity-50"
+            className="h-auto p-4 justify-start gap-3 border-gray-200 hover:bg-gray-50 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={checkedSteps.size === 0}
             onClick={() => handleOutcome('resolved')}
           >
             <CheckCircle className="h-4 w-4 text-green-600" />
             <div className="text-left">
               <div className="font-medium text-sm text-gray-900">Resolved</div>
-              <div className="text-xs text-gray-500">Issue is fixed</div>
+              <div className="text-xs text-gray-500">
+                {checkedSteps.size === 0 ? 'Try at least one step first' : 'Issue is fixed'}
+              </div>
             </div>
           </Button>
 
           <Button
             variant="outline"
-            className="h-auto p-4 justify-start gap-3 border-gray-200 hover:bg-gray-50 bg-white disabled:opacity-50"
+            className="h-auto p-4 justify-start gap-3 border-gray-200 hover:bg-gray-50 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={checkedSteps.size === 0}
             onClick={() => handleOutcome('not_resolved')}
           >
             <XCircle className="h-4 w-4 text-red-600" />
             <div className="text-left">
               <div className="font-medium text-sm text-gray-900">Not Resolved</div>
-              <div className="text-xs text-gray-500">Still having issues</div>
+              <div className="text-xs text-gray-500">
+                {checkedSteps.size === 0 ? 'Try at least one step first' : 'Still having issues'}
+              </div>
             </div>
           </Button>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-full gap-2 border-gray-200 hover:bg-gray-50 bg-orange-100 text-orange-800 border-orange-200"
-          onClick={handleAnotherIssue}
-        >
-          <RotateCcw className="h-4 w-4" />
-          Another Issue
-        </Button>
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-gray-200 hover:bg-gray-50 bg-orange-100 text-orange-800 border-orange-200"
+              onClick={handleAnotherIssue}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Different Issue - This Guide Doesn&apos;t Match
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                Confirm Different Issue
+              </DialogTitle>
+              <DialogDescription className="text-left">
+                Are you sure this troubleshooting guide doesn&apos;t match your issue? 
+                {checkedSteps.size > 0 && (
+                  <span className="block mt-2 text-sm text-gray-600">
+                    Your progress on {checkedSteps.size} step{checkedSteps.size !== 1 ? 's' : ''} will be saved.
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+              >
+                Continue This Guide
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmAnotherIssue}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Yes, Different Issue
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         
       </div>

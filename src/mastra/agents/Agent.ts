@@ -8,9 +8,20 @@ import { PgVector, PostgresStore } from "@mastra/pg";
 const pgStore = new PostgresStore({ connectionString:process.env.MEMORY_DB_URI!})
 const pgVector = new PgVector({ connectionString:process.env.MEMORY_DB_URI!})
 
+// const openai = createOpenAI({
+//   baseURL: "http://localhost:11434/v1",
+//   apiKey: "ollama",
+//   compatibility: "compatible",
+// })
+
 const openai = createOpenAI({
-  baseURL: "http://localhost:11434/v1",
-  // baseURL: "https://api.openai.com/v1",
+  baseURL: "https://angeles-trading-clerk-cleaners.trycloudflare.com/v1",
+  apiKey: "ollama",
+  compatibility: "compatible",
+})
+
+const openai_embedding = createOpenAI({
+  baseURL: "http://10.1.2.96:11434/v1",
   apiKey: "ollama",
   compatibility: "compatible",
 })
@@ -19,7 +30,7 @@ const openai = createOpenAI({
 const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: "pgVector",
   indexName: "helpdesk_troubleshooting_documents",
-  model: openai.embedding("nomic-embed-text:latest"),
+  model: openai_embedding.embedding("nomic-embed-text:latest"),
   enableFilter: true,
 });
 
@@ -149,8 +160,8 @@ export const HelpdeskAgent = new Agent({
   name: "Helpdesk Assistant",
   instructions: prompt_helpdesk,
   memory: memory,
-  // model: openai("mistral-small3.1:latest"),
-  model: openai("gpt-oss:20b"),
+  model: openai("gpt-oss-128k"),
+  // model: openai("gpt-oss:20b"),
   tools: {
     vectorQueryTool,
   },

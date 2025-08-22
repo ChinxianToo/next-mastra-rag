@@ -20,6 +20,20 @@ export async function POST(req: Request) {
     console.log('Processing checklist outcome:', outcome.type, 'for session:', outcome.sessionId);
     console.log('Attempted steps:', outcome.attemptedSteps);
 
+    // Validate that resolved/not_resolved outcomes have at least one attempted step
+    const hasAttemptedSteps = outcome.attemptedSteps.length > 0 || 
+                             (outcome.stepDetails && outcome.stepDetails.some(step => step.attempted));
+    
+    if ((outcome.type === 'resolved' || outcome.type === 'not_resolved') && !hasAttemptedSteps) {
+      return Response.json(
+        { 
+          error: "Cannot mark issue as resolved or not resolved without attempting at least one troubleshooting step",
+          content: "Please try at least one troubleshooting step before selecting an outcome."
+        },
+        { status: 400 }
+      );
+    }
+
     // Handle the checklist outcome with database persistence
     let responseContent = '';
     let ticketId = null;

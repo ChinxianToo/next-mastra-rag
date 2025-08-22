@@ -206,11 +206,21 @@ export function ChatInterface() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to process checklist outcome");
-      }
-
       const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle validation errors from backend
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          content: data.content || "Failed to process checklist outcome. Please try again.",
+          role: "assistant",
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        // Keep checklist open so user can try again
+        setChecklistData(checklistData);
+        return;
+      }
       
       const assistantMessage: Message = {
         id: Date.now().toString(),

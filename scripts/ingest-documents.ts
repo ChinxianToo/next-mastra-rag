@@ -8,7 +8,15 @@ import mammoth from "mammoth";
 import { parse as csvParse } from "csv-parse/sync";
 
 // Define PostgreSQL connection string
-const DOCS_DIR = "../src/documents";
+// const DOCS_DIR = "../src/documents";
+const candidateDirs = [
+  path.resolve(process.cwd(), "src/documents"),
+  path.resolve(process.cwd(), "../src/documents"),
+  path.resolve(process.cwd(), "../../src/documents"),
+];
+
+const DOCS_DIR =
+  candidateDirs.find((dir) => fs.existsSync(dir)) || candidateDirs[0];
 const INDEX_NAME = "helpdesk_troubleshooting_documents";
 
 // Function to extract text from docx
@@ -143,7 +151,7 @@ async function main() {
     console.log(`Number of documents for ${file}:`, documents.length);
 
     const openai = createOpenAI({
-      baseURL: "http://localhost:11434/v1",
+      baseURL: "http://10.1.2.96:11434/v1",
       apiKey: "ollama",
       compatibility: "compatible",
     });
@@ -157,7 +165,7 @@ async function main() {
         strategy: "recursive",
         size: 3000, // Larger chunks to keep complete troubleshooting steps
         overlap: 800, // Good overlap for context continuity
-        separator: "\n\n",
+        separators: ["\n\n"],
       });
 
       console.log(`Number of chunks for document ${i + 1}:`, chunks.length);

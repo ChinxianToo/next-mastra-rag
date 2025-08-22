@@ -134,7 +134,20 @@ The system provides functions to analyze:
 2. **Graceful Fallbacks:** Works even if database is unavailable
 3. **Complete Session Tracking:** Records every step attempt and outcome
 4. **Automatic Ticket Creation:** Generates support tickets for unresolved issues
-5. **Analytics Ready:** Data structure supports detailed reporting
+5. **Data Collection Ready:** Data structure supports future analytics and reporting
+6. **Step Validation:** Enforces that users must attempt at least one step before marking issues as resolved/unresolved
+
+## Validation Logic
+
+### Frontend Validation
+- **Resolved/Not Resolved buttons:** Disabled until at least one step is checked
+- **Visual feedback:** Warning message and dynamic button text when no steps attempted
+- **Different Issue button:** Always enabled (users can immediately identify wrong guides)
+
+### Backend Validation
+- **API-level enforcement:** Server validates that resolved/not_resolved outcomes have attempted steps
+- **Graceful error handling:** Returns user-friendly error messages
+- **Data integrity:** Ensures only meaningful resolution data enters the database
 
 ## Database Service Functions
 
@@ -155,20 +168,7 @@ The system includes fallback logic to handle:
 
 Users will still receive appropriate responses even if database operations fail.
 
-## Analytics API
 
-View collected data and statistics:
-
-```bash
-# Get troubleshooting analytics
-curl http://localhost:3000/api/analytics
-```
-
-Returns:
-- Total sessions and resolution rates
-- Average steps to resolution
-- List of unresolved sessions needing follow-up
-- Ticket information for escalated issues
 
 ## Example Usage Flow
 
@@ -176,8 +176,8 @@ Returns:
 2. **System creates session:** Records issue description and matched guide
 3. **User works through checklist:** Each step attempt is tracked
 4. **User marks outcome:**
-   - **Resolved:** Session closed, marked successful
-   - **Not Resolved:** Ticket created, session flagged for follow-up
-   - **Wrong Guide:** Session marked as misclassified
+   - **Resolved:** Session closed, marked successful *(requires at least 1 step attempted)*
+   - **Not Resolved:** Ticket created, session flagged for follow-up *(requires at least 1 step attempted)*
+   - **Different Issue:** Session marked as misclassified *(no steps required - user can immediately identify wrong guide)*
 
-5. **Analytics:** Track patterns, identify problematic guides, follow up on tickets
+5. **Data Collection:** All troubleshooting data is stored for future analysis
