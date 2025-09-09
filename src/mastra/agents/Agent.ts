@@ -5,23 +5,23 @@ import { Memory } from "@mastra/memory";
 import { PgVector, PostgresStore } from "@mastra/pg";
 
 
-const pgStore = new PostgresStore({ connectionString:process.env.MEMORY_DB_URI!})
-const pgVector = new PgVector({ connectionString:process.env.MEMORY_DB_URI!})
+const pgStore = new PostgresStore({ connectionString:process.env.MEMORY_DB_URL!})
+const pgVector = new PgVector({ connectionString:process.env.MEMORY_DB_URL!})
 
 // const openai = createOpenAI({
 //   baseURL: "http://localhost:11434/v1",
-//   apiKey: "ollama",
+//   apiKey: "ollama", 
 //   compatibility: "compatible",
 // })
 
 const openai = createOpenAI({
-  baseURL: "https://angeles-trading-clerk-cleaners.trycloudflare.com/v1",
+  baseURL: "https://knife-hint-warrior-etc.trycloudflare.com/v1",
   apiKey: "ollama",
   compatibility: "compatible",
 })
 
 const openai_embedding = createOpenAI({
-  baseURL: "http://10.1.2.96:11434/v1",
+  baseURL: "http://10.1.2.96:11434/v1", 
   apiKey: "ollama",
   compatibility: "compatible",
 })
@@ -143,7 +143,7 @@ FINAL REMINDER:
 const memory = new Memory({
   storage: pgStore,
   vector: pgVector,
-  embedder: openai.embedding("nomic-embed-text:latest"),
+  embedder: openai_embedding.embedding("nomic-embed-text:latest"), // Use the same embedding client
   options: {
     lastMessages: 5, // Keep track of the last 5 messages for context
     semanticRecall: true, // Enable semantic recall for better context understanding
@@ -160,8 +160,8 @@ export const HelpdeskAgent = new Agent({
   name: "Helpdesk Assistant",
   instructions: prompt_helpdesk,
   memory: memory,
-  model: openai("gpt-oss-128k"),
-  // model: openai("gpt-oss:20b"),
+  // model: openai("gpt-oss-128k"),
+  model: openai("gpt-oss:20b"),
   tools: {
     vectorQueryTool,
   },

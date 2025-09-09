@@ -267,7 +267,7 @@ export function ChatInterface() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 space-y-4 overflow-y-auto" ref={scrollAreaRef}>
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent" ref={scrollAreaRef}>
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -341,18 +341,18 @@ export function ChatInterface() {
         <CardContent className="p-4 bg-[#F7F7F2]">
           <div className="flex gap-3">
             <Input
-              placeholder="Describe your issue here..."
+              placeholder={checklistData ? "Please complete the troubleshooting checklist above first" : "Describe your issue here..."}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              disabled={isLoading}
-              className="flex-1 h-12 px-4 border-gray-300 rounded-lg text-base placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500"
+              disabled={isLoading || checklistData !== null}
+              className="flex-1 h-12 px-4 border-gray-300 rounded-lg text-base placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500 disabled:bg-gray-100 disabled:text-gray-400"
             />
             <Button 
               size="lg" 
-              className="h-12 px-6 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg gap-2"
+              className="h-12 px-6 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
               onClick={() => sendMessage()}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || checklistData !== null}
             >
               {isLoading ? (
                 <Loader2Icon className="w-4 h-4 animate-spin" />

@@ -183,7 +183,7 @@ export function TroubleshootingChecklist({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full gap-2 border-gray-200 hover:bg-gray-50 bg-orange-100 text-orange-800 border-orange-200"
+              className="w-full gap-2 bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 hover:border-orange-300 transition-colors"
               onClick={handleAnotherIssue}
             >
               <RotateCcw className="h-4 w-4" />
@@ -208,6 +208,7 @@ export function TroubleshootingChecklist({
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="outline"
+                className="hover:bg-gray-100 hover:border-gray-300 transition-colors"
                 onClick={() => setShowConfirmDialog(false)}
               >
                 Continue This Guide
